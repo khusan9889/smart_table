@@ -82,6 +82,8 @@ if __name__ == "__main__":
                     print(type(result))
 
                     if "up" in result.lower():
+                        # GPIO.output(11, 0)
+                        # GPIO.output(11, 1)
                         print("Table mode activated.")
                         # Split the result into words
                         words = result.lower().split()
@@ -100,6 +102,8 @@ if __name__ == "__main__":
                                     print("Invalid height specified")
 
                     if "release" in result.lower():
+                        # GPIO.output(13, 0)
+                        # GPIO.output(13, 1)
                         print("Table mode activated.")
                         # Split the result into words
                         words = result.lower().split()
@@ -133,6 +137,8 @@ if __name__ == "__main__":
                             option = option.lower()
 
                             if "first" in option:
+                                # GPIO(16, 0)
+                                # GPIO(16, 1)
                                 print("binding to first button")
                                 # switch on then off the GPIO of neccessary button to which we want to bind
                                 # GPIO(16, 0)

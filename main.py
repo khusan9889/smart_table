@@ -15,13 +15,14 @@ from notifications import run
 from where_is import where_is
 from music import music_function
 from fuzzywuzzy import fuzz
+from music import *
 
 import re
 import time
 
 
 r = sr.Recognizer()
-wake_word = "hey billy"
+wake_word = "billy" 
 
 
 # GPIO.setmode(GPIO.BOARD)
@@ -49,8 +50,16 @@ wake_word = "hey billy"
 def speak(text):
     tts = gTTS(text=text, lang="en")
     tts.save("output.mp3")
-    subprocess.run(["mpg321", "output.mp3"])
 
+def wake_up(text):
+    tts = gTTS(text=text, lang="en")
+    tts.save("wake_up_message.mp3")
+def play_wake_up_sound():
+    wake_up_sound_path = "wake_up_message.mp3"
+    wake_up_data, sample_rate = sf.read(wake_up_sound_path)
+    sd.play(wake_up_data, sample_rate)
+    sd.wait()
+    # subprocess.run(["mpg321", wake_up_sound_path])
 
 def play_peep_sound():
     peep_sound_path = "peep.wav"
@@ -155,11 +164,13 @@ if __name__ == "__main__":
             if wake_word in result:
                 print("Wake word detected")
                 wake_word_detected = True
+                wake_up("Hello. How can i help you?")
+                play_wake_up_sound()
             elif wake_word_detected:
 
                 if result:
-                    print("You said:")
-                    print(result)
+                    # print("You said:")
+                    # print(result)
                     print(type(result))
 
                     if "up" in result.lower():
@@ -174,6 +185,8 @@ if __name__ == "__main__":
                                     target_height = current_distance + height
                                     up_table(target_height)
                                     print(f"Table is raised for {height} cm")
+                                    wake_up(f"Table is raised for {height} cm")
+                                    play_wake_up_sound()
                                     break
                                 except ValueError:
                                     print("Invalid height specified")
@@ -191,6 +204,8 @@ if __name__ == "__main__":
                                     down_table(target_height)
                                     print("release_table function is called")
                                     print(f"Table is released {height} cm")
+                                    wake_up(f"Table is released for {height} cm")
+                                    play_wake_up_sound()
                                     break
                                 except ValueError:
                                     print("Invalid height specified")
@@ -239,10 +254,14 @@ if __name__ == "__main__":
                         play_peep_sound()
                         # GPIO.output(18, 0)
                         print("lights are switched on")
+                        wake_up("lights are switched on")
+                        play_wake_up_sound()
                     elif "switch off" in result.lower():
                         play_peep_sound()
                         # GPIO.output(18, 1)
                         print("lights are switched off")
+                        wake_up("lights are switched off")
+                        play_wake_up_sound()
                     # elif "increase volume" in result.lower():
                     #     increase_vol()
                     # elif "decrease volume" in result.lower():

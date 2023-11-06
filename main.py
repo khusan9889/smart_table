@@ -3,7 +3,6 @@ import subprocess
 import sounddevice as sd
 import soundfile as sf
 from gtts import gTTS
-import pygame.mixer
 
 # import RPi.GPIO as GPIO
 # from ultrasonic import *
@@ -24,11 +23,6 @@ import time
 r = sr.Recognizer()
 wake_word = "hey billy"
 
-
-# Initialize pygame
-pygame.init()
-# Initialize pygame.mixer
-pygame.mixer.init()
 
 # GPIO.setmode(GPIO.BOARD)
 # GPIO.setup(11, GPIO.OUT)
@@ -51,30 +45,6 @@ pygame.mixer.init()
 # GPIO.output(22, 1)
 
 
-def listen_for_wake_word():
-    r = sr.Recognizer()
-    microphone = sr.Microphone()
-
-    with microphone as source:
-        print("Listening for the wake word...")
-        audio = r.listen(source)
-
-    try:
-        detected_text = r.recognize_google(audio, language="en-US").lower()
-        if "hey billy" in detected_text:
-            return True
-        else:
-            return False
-    except sr.UnknownValueError:
-        return False
-
-def play_wake_up_message():
-    try:
-        pygame.mixer.music.load("wake_up_message.mp3")
-        pygame.mixer.music.play()
-    except pygame.error:
-        print("Pygame mixer could not be initialized. Make sure you have pygame installed.")
-
 # Функция Текст-в-речь
 def speak(text):
     tts = gTTS(text=text, lang="en")
@@ -83,22 +53,14 @@ def speak(text):
 
 
 def play_peep_sound():
-    peep_sound_path = "peep.wav"  # Путь к файлу с звуком
-
-    # Загрузите аудиофайл с использованием soundfile
+    peep_sound_path = "peep.wav"
     peep_data, sample_rate = sf.read(peep_sound_path)
-
-    # Воспроизведите аудиофайл с использованием sounddevice
     sd.play(peep_data, sample_rate)
     sd.wait()
 
 
-# Function to raise the table to a specified height
-
-# Function to raise the table to a specified height
-
 # Initialize the current_distance variable with a default value
-current_distance = 0  # You may want to update this to the actual initial distance
+current_distance = 0
 
 
 def up_table(height_cm):
@@ -119,7 +81,6 @@ def up_table(height_cm):
     height_difference = target_height - current_distance
 
     # Calculate the time required to raise the table to the target height
-    # You may need to adjust the time_to_raise_factor based on your specific setup
     time_to_raise_factor = 0.5  # Adjust this factor as needed
     time_to_raise = height_difference * time_to_raise_factor
 
@@ -148,11 +109,9 @@ def down_table(height_cm):
     height_difference = target_height - current_distance
 
     # Calculate the time required to lower the table to the target height
-    # You may need to adjust the time_to_lower_factor based on your specific setup
     time_to_lower_factor = 0.5  # Adjust this factor as needed
     time_to_lower = height_difference * time_to_lower_factor
 
-    # Lower the table
     # GPIO.output(13, 0)
     time.sleep(time_to_lower)
     # GPIO.output(13, 1)
@@ -168,39 +127,40 @@ def bind_button():
 
 
 def listen():
-    text = ""
     with sr.Microphone() as source:
-        print("Listening for wake word...")
+        print("Listening...")
         r.adjust_for_ambient_noise(source)
         audio = r.listen(source)
 
         try:
             text = r.recognize_google(audio, language="en-US").lower()
-            if fuzz.ratio(text, wake_word) > 70:
-                text = text.replace(wake_word, "").strip()  # Remove the wake word
-                print("Wake word detected")
-                return text
+            print("You said:")
+            print(text)
+            return text
         except sr.UnknownValueError:
             pass
 
-    return text
+        return ""
 
 
 if __name__ == "__main__":
     remember_mode = False
     play_peep_sound()
+    wake_word_detected = False
 
     while True:
         try:
-            if listen_for_wake_word():
+            result = listen()
+
+            if wake_word in result:
                 print("Wake word detected")
-                play_wake_up_message()
-                result = listen()
+                wake_word_detected = True
+            elif wake_word_detected:
 
                 if result:
                     print("You said:")
                     print(result)
-                    # print(type(result))
+                    print(type(result))
 
                     if "up" in result.lower():
                         print("Table mode activated.")
@@ -240,7 +200,9 @@ if __name__ == "__main__":
                         break
 
                     if "set settings" in result.lower():
-                        print("Set up mode activated. Choose which button to bind (A,B,B)")
+                        print(
+                            "Set up mode activated. Choose which button to bind (A,B,B)"
+                        )
                         bind_button()
                         print("To which button you want to bind?")
                         option = listen()
@@ -294,7 +256,9 @@ if __name__ == "__main__":
                     print("remember_mode", remember_mode)
 
                     if remember_mode:
-                        user_question = result  # Store the user's question for later use
+                        user_question = (
+                            result  # Store the user's question for later use
+                        )
                         print("You talked:")
                         print(result)
                         print(type(result))

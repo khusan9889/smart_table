@@ -14,7 +14,9 @@ from where_is import where_is
 from music import music_function
 from fuzzywuzzy import fuzz
 from music import *
+import pyttsx3
 
+engine = pyttsx3.init()
 
 
 r = sr.Recognizer()
@@ -57,32 +59,35 @@ def record():
 
     print("Recording...")
 
-    while True:
-        try:
-            data = stream.read(CHUNK)
-            frames.append(data)
+    
+        
+    data = stream.read(CHUNK)
+    frames.append(data)
+    text = listen()  # Listen inside the loop for more commands
+    if "stop recording" in text.lower():
+        print("Recording stopped.")
 
-            text = listen()  # Listen inside the loop for more commands
 
-            if "stop recording" in text.lower():
-                print("Recording stopped.")
-                stream.stop_stream()
-                stream.close()
-                audio.terminate()
-
-                if frames:
-                    wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
-                    wf.setnchannels(CHANNELS)
-                    wf.setsampwidth(audio.get_sample_size(FORMAT))
-                    wf.setframerate(RATE)
-                    wf.writeframes(b''.join(frames))  # Write all frames to WAV file
-                    wf.close()
-                else:
-                    print("No audio data recorded.")
-                return  # Exit the record function once stopped
-        except KeyboardInterrupt:
-            print("Recording stopped due to KeyboardInterrupt.")
-            break
+        stream.stop_stream()
+        stream.close()
+        audio.terminate()
+        if frames:
+            wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
+            wf.setnchannels(CHANNELS)
+            wf.setsampwidth(audio.get_sample_size(FORMAT))
+            wf.setframerate(RATE)
+            wf.writeframes(b''.join(frames))  # Write all frames to WAV file
+            wf.close()
+            
+            
+            engine.save_to_file(text, 'recognized_audio.mp3')
+            # engine.runAndWait()
+            
+            
+        else:
+            print("No audio data recorded.")
+        return  # Exit the record function once stopped
+        
 
 
 
@@ -261,6 +266,8 @@ if __name__ == "__main__":
                     if "recording" in result:
                         print("Recording mode activated.")
                         record()
+                        # wake_up(result)
+                        # play_wake_up_sound()
                         print("Recording stopped.")
 
 

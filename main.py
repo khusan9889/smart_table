@@ -1,5 +1,7 @@
 import speech_recognition as sr
 import subprocess
+import wave
+import pyaudio
 # import RPi.GPIO as GPIO
 # from ultrasonic import *
 from gpt import gpt_answer
@@ -12,6 +14,7 @@ from where_is import where_is
 from music import music_function
 from fuzzywuzzy import fuzz
 from music import *
+
 
 
 r = sr.Recognizer()
@@ -40,7 +43,47 @@ wake_word = "billy"
 
 
 
-# Initialize the current_distance variable with a default value
+def record():
+    CHUNK = 1024
+    FORMAT = pyaudio.paInt16
+    CHANNELS = 1
+    RATE = 44100
+    WAVE_OUTPUT_FILENAME = "recording.wav"
+
+    audio = pyaudio.PyAudio()
+    frames = []
+
+    stream = audio.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
+
+    print("Recording...")
+
+    while True:
+        try:
+            data = stream.read(CHUNK)
+            frames.append(data)
+
+            text = listen()  # Listen inside the loop for more commands
+
+            if "stop recording" in text.lower():
+                print("Recording stopped.")
+                stream.stop_stream()
+                stream.close()
+                audio.terminate()
+
+                if frames:
+                    wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
+                    wf.setnchannels(CHANNELS)
+                    wf.setsampwidth(audio.get_sample_size(FORMAT))
+                    wf.setframerate(RATE)
+                    wf.writeframes(b''.join(frames))  # Write all frames to WAV file
+                    wf.close()
+                else:
+                    print("No audio data recorded.")
+                return  # Exit the record function once stopped
+        except KeyboardInterrupt:
+            print("Recording stopped due to KeyboardInterrupt.")
+            break
+
 
 
 def listen():
@@ -58,6 +101,7 @@ def listen():
             pass
 
         return ""
+
 
 
 if __name__ == "__main__":
@@ -213,6 +257,13 @@ if __name__ == "__main__":
                         )
                         help_mode = True
                         continue
+                    
+                    if "recording" in result:
+                        print("Recording mode activated.")
+                        record()
+                        print("Recording stopped.")
+
+
 
                     # if "temperature" in result.lower():
                     #     temperature = runs()

@@ -2,13 +2,16 @@ import speech_recognition as sr
 import subprocess
 import wave
 import pyaudio
+
 # import RPi.GPIO as GPIO
 # from ultrasonic import *
 from gpt import gpt_answer
 from height import *
 from sounds import *
+
 # from dht import runs
 from notifications import run
+
 # from volume import increase_vol, decrease_vol
 from where_is import where_is
 from music import music_function
@@ -20,7 +23,7 @@ engine = pyttsx3.init()
 
 
 r = sr.Recognizer()
-wake_word = "billy" 
+wake_word = "billy"
 
 
 # GPIO.setmode(GPIO.BOARD)
@@ -44,7 +47,6 @@ wake_word = "billy"
 # GPIO.output(22, 1)
 
 
-
 def record():
     CHUNK = 1024
     FORMAT = pyaudio.paInt16
@@ -55,40 +57,49 @@ def record():
     audio = pyaudio.PyAudio()
     frames = []
 
-    stream = audio.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
+    stream = audio.open(
+        format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK
+    )
 
     print("Recording...")
 
-    
-        
     data = stream.read(CHUNK)
     frames.append(data)
-    text = listen()  # Listen inside the loop for more commands
+    text = listen()
+    print(text, "recording text")
+
+    # Saving the text in a file
+    with open("recordings.txt", "w") as text_file:
+        data = text
+        text_file.write(data)
+
     if "stop recording" in text.lower():
         print("Recording stopped.")
-
 
         stream.stop_stream()
         stream.close()
         audio.terminate()
         if frames:
-            wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
+            wf = wave.open(WAVE_OUTPUT_FILENAME, "wb")
             wf.setnchannels(CHANNELS)
             wf.setsampwidth(audio.get_sample_size(FORMAT))
             wf.setframerate(RATE)
-            wf.writeframes(b''.join(frames))  # Write all frames to WAV file
+            wf.writeframes(b"".join(frames))  # Write all frames to WAV file
             wf.close()
-            
-            
-            engine.save_to_file(text, 'recognized_audio.mp3')
-            # engine.runAndWait()
-            
-            
+
+            engine.save_to_file(text, "recognized_audio.mp3")
+            engine.runAndWait()
+
         else:
             print("No audio data recorded.")
         return  # Exit the record function once stopped
-        
 
+
+def notes():
+    with open("recordings.txt", "r") as f:
+        file_content = f.read()
+    wake_up(file_content)
+    play_wake_up_sound()
 
 
 def listen():
@@ -108,7 +119,6 @@ def listen():
         return ""
 
 
-
 if __name__ == "__main__":
     remember_mode = False
     play_peep_sound()
@@ -124,7 +134,6 @@ if __name__ == "__main__":
                 wake_up("Hello. How can i help you?")
                 play_wake_up_sound()
             elif wake_word_detected:
-
                 if result:
                     # print("You said:")
                     # print(result)
@@ -262,7 +271,7 @@ if __name__ == "__main__":
                         )
                         help_mode = True
                         continue
-                    
+
                     if "recording" in result:
                         print("Recording mode activated.")
                         record()
@@ -270,7 +279,8 @@ if __name__ == "__main__":
                         # play_wake_up_sound()
                         print("Recording stopped.")
 
-
+                    if "show notes" in result:
+                        notes()
 
                     # if "temperature" in result.lower():
                     #     temperature = runs()
